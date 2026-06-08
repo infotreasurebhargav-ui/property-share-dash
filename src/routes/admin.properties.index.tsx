@@ -109,15 +109,17 @@ function PropertiesPage() {
               </Select>
             </div>
             <div>
-              <Label>Monthly Rent (₹)</Label>
+              <Label>Monthly Rent (₹) <span className="text-muted-foreground font-normal text-xs">— optional</span></Label>
               <Input
                 type="number"
                 inputMode="numeric"
                 min="0"
+                placeholder="Auto from units"
                 value={form.monthlyRent}
                 onChange={(e) => setForm({ ...form, monthlyRent: e.target.value })}
                 className="text-base"
               />
+              <p className="text-[11px] text-muted-foreground mt-1">Leave blank if you'll add floor-wise units — total auto-calculates.</p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
