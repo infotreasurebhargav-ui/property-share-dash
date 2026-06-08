@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useDB, propertySummary, formatINR, totalPercent } from "@/lib/store";
+import { useDB, propertySummary, formatINR, totalPercent, effectiveRent } from "@/lib/store";
 import { PageHeader } from "@/components/AppShell";
-import { Building2, Users, TrendingUp, TrendingDown, ArrowRight, LayoutDashboard, AlertTriangle } from "lucide-react";
+import { Building2, Users, TrendingUp, TrendingDown, ArrowRight, LayoutDashboard, AlertTriangle, Layers } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminHome,
@@ -14,7 +14,7 @@ function AdminHome() {
       const s = propertySummary(p.id, data.transactions);
       acc.income += s.income;
       acc.expense += s.expense;
-      acc.rent += p.monthlyRent;
+      acc.rent += effectiveRent(p);
       return acc;
     },
     { income: 0, expense: 0, rent: 0 },
@@ -51,7 +51,7 @@ function AdminHome() {
 
       {incomplete.length > 0 && (
         <div className="glass p-4 mb-6 border-l-4 border-l-amber-500 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
           <div className="flex-1">
             <div className="font-semibold text-sm">Partnership not balanced</div>
             <p className="text-xs text-muted-foreground">
@@ -81,6 +81,8 @@ function AdminHome() {
           {data.properties.map((p) => {
             const s = propertySummary(p.id, data.transactions);
             const pct = totalPercent(p);
+            const rent = effectiveRent(p);
+            const unitCount = (p.units ?? []).length;
             return (
               <Link
                 key={p.id}
@@ -90,26 +92,33 @@ function AdminHome() {
               >
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
-                    <div className="text-xs text-muted-foreground uppercase">{p.type}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-muted-foreground uppercase">{p.type}</div>
+                      {unitCount > 0 && (
+                        <span className="text-[10px] flex items-center gap-0.5 text-[var(--brand-blue)] font-semibold">
+                          <Layers className="h-3 w-3" /> {unitCount} unit{unitCount > 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
                     <div className="font-bold truncate">{p.name}</div>
                     <div className="text-xs text-muted-foreground truncate">{p.address}</div>
                   </div>
-                  <div className={`text-xs px-2 py-1 rounded-md font-semibold ${pct === 100 ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
+                  <div className={`text-xs px-2 py-1 rounded-md font-semibold shrink-0 ${pct === 100 ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
                     {pct}%
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="glass-soft p-2">
                     <div className="text-[10px] uppercase text-muted-foreground">Rent</div>
-                    <div className="text-sm font-bold">{formatINR(p.monthlyRent)}</div>
+                    <div className="text-sm font-bold">{formatINR(rent)}</div>
                   </div>
                   <div className="glass-soft p-2">
                     <div className="text-[10px] uppercase text-muted-foreground">Income</div>
                     <div className="text-sm font-bold text-emerald-700">{formatINR(s.income)}</div>
                   </div>
                   <div className="glass-soft p-2">
-                    <div className="text-[10px] uppercase text-muted-foreground">Expense</div>
-                    <div className="text-sm font-bold text-red-700">{formatINR(s.expense)}</div>
+                    <div className="text-[10px] uppercase text-muted-foreground">Net</div>
+                    <div className={`text-sm font-bold ${s.net >= 0 ? "text-emerald-700" : "text-red-700"}`}>{formatINR(s.net)}</div>
                   </div>
                 </div>
               </Link>

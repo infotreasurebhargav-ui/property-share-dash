@@ -8,7 +8,7 @@ export interface User {
   username: string;
   password: string;
   role: Role;
-  partnerId?: string; // for partner role
+  partnerId?: string;
 }
 
 export interface Partner {
@@ -24,15 +24,26 @@ export interface PropertyPartner {
   percent: number;
 }
 
+// A rentable unit inside a property (floor + unit breakdown)
+export interface Unit {
+  id: string;
+  floor: string;       // e.g. "GF", "1/F", "2/F", "3/F"
+  label: string;       // e.g. "Shop A", "Flat 101", "Office"
+  monthlyRent: number;
+  tenantName?: string;
+  tenantContact?: string;
+}
+
 export interface Property {
   id: string;
   name: string;
   address: string;
-  type: string; // e.g. Apartment, Shop, Office, Land
-  monthlyRent: number;
+  type: string;
+  monthlyRent: number; // used when no units defined; auto-computed from units when they exist
   tenantName?: string;
   tenantContact?: string;
   partners: PropertyPartner[];
+  units: Unit[];       // floor/unit breakdown (may be empty for simple properties)
   createdAt: string;
 }
 
@@ -41,11 +52,13 @@ export type TxnType = "rent" | "expense";
 export interface Transaction {
   id: string;
   propertyId: string;
+  unitId?: string;        // which unit (optional; used when property has units)
   type: TxnType;
   amount: number;
-  date: string; // ISO yyyy-mm-dd
+  date: string;           // ISO yyyy-mm-dd
   category?: string;
   note?: string;
+  collectedBy?: string;   // partnerId who physically collected / paid this
 }
 
 interface DB {
@@ -55,7 +68,7 @@ interface DB {
   transactions: Transaction[];
 }
 
-const KEY = "pm_db_v1";
+const KEY = "pm_db_v2";
 const SESSION_KEY = "pm_session_v1";
 
 const emptyDB: DB = {
@@ -65,16 +78,35 @@ const emptyDB: DB = {
   transactions: [],
 };
 
+function migrate(raw: any): DB {
+  // Ensure every property has a units array (migrate from v1)
+  if (raw.properties) {
+    raw.properties = raw.properties.map((p: any) => ({
+      ...p,
+      units: p.units ?? [],
+    }));
+  }
+  return raw as DB;
+}
+
 function read(): DB {
   if (typeof window === "undefined") return emptyDB;
   try {
-    const raw = localStorage.getItem(KEY);
+    // Try v2 key first
+    let raw = localStorage.getItem(KEY);
     if (!raw) {
-      localStorage.setItem(KEY, JSON.stringify(emptyDB));
-      return emptyDB;
+      // Migrate from v1 if present
+      const old = localStorage.getItem("pm_db_v1");
+      if (old) {
+        const parsed = migrate(JSON.parse(old));
+        localStorage.setItem(KEY, JSON.stringify(parsed));
+        raw = JSON.stringify(parsed);
+      } else {
+        localStorage.setItem(KEY, JSON.stringify(emptyDB));
+        return emptyDB;
+      }
     }
-    const parsed = JSON.parse(raw) as DB;
-    // ensure admin exists
+    const parsed = migrate(JSON.parse(raw));
     if (!parsed.users?.some((u) => u.username === "admin")) {
       parsed.users = [...(parsed.users ?? []), emptyDB.users[0]];
       localStorage.setItem(KEY, JSON.stringify(parsed));
@@ -119,9 +151,7 @@ function subscribe(cb: () => void) {
 
 export const db = {
   get: read,
-  set: (data: DB) => {
-    write(data);
-  },
+  set: (data: DB) => write(data),
   uid: (prefix = "id") =>
     `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
 };
@@ -130,7 +160,7 @@ export function useDB(): DB {
   return useSyncExternalStore(subscribe, getSnapshot, () => emptyDB);
 }
 
-// ----- session -----
+// ----- Session -----
 export interface Session {
   userId: string;
   role: Role;
@@ -178,9 +208,17 @@ export function logout() {
   setSession(null);
 }
 
-// ----- helpers -----
+// ----- Helpers -----
 export function totalPercent(p: Property): number {
   return p.partners.reduce((s, x) => s + (Number(x.percent) || 0), 0);
+}
+
+/** Effective monthly rent: sum of unit rents if units exist, else property.monthlyRent */
+export function effectiveRent(p: Property): number {
+  if (p.units.length > 0) {
+    return p.units.reduce((s, u) => s + u.monthlyRent, 0);
+  }
+  return p.monthlyRent;
 }
 
 export function propertySummary(propertyId: string, txns: Transaction[]) {
@@ -196,4 +234,78 @@ export function formatINR(n: number) {
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(n || 0);
+}
+
+// ----- Settlement computation -----
+/**
+ * For each transaction that has a `collectedBy` partner:
+ *   - If RENT: collector holds the money → owes every other partner their % share
+ *   - If EXPENSE: collector paid out of pocket → every other partner owes collector their % share
+ *
+ * Returns net balances: { from, to, amount } where `from` owes `to` the `amount`.
+ */
+export interface PartnerBalance {
+  from: string;   // partnerId who owes
+  to: string;     // partnerId who is owed
+  amount: number; // always positive
+}
+
+export function computeSettlements(
+  propertyId: string,
+  partners: PropertyPartner[],
+  txns: Transaction[],
+): PartnerBalance[] {
+  // ledger[A][B] = amount A owes B (can go negative, meaning B owes A)
+  const ledger: Record<string, Record<string, number>> = {};
+
+  const ensure = (a: string, b: string) => {
+    if (!ledger[a]) ledger[a] = {};
+    if (!ledger[a][b]) ledger[a][b] = 0;
+    if (!ledger[b]) ledger[b] = {};
+    if (!ledger[b][a]) ledger[b][a] = 0;
+  };
+
+  for (const t of txns) {
+    if (t.propertyId !== propertyId || !t.collectedBy) continue;
+    const collector = t.collectedBy;
+
+    for (const pp of partners) {
+      if (pp.partnerId === collector) continue;
+      const share = (t.amount * pp.percent) / 100;
+      ensure(collector, pp.partnerId);
+
+      if (t.type === "rent") {
+        // collector received rent → owes other partner their share
+        ledger[collector][pp.partnerId] += share;
+        ledger[pp.partnerId][collector] -= share;
+      } else {
+        // collector paid expense → other partner owes collector their share
+        ledger[pp.partnerId][collector] += share;
+        ledger[collector][pp.partnerId] -= share;
+      }
+    }
+  }
+
+  // Consolidate to net balances
+  const result: PartnerBalance[] = [];
+  const seen = new Set<string>();
+
+  for (const from of Object.keys(ledger)) {
+    for (const to of Object.keys(ledger[from])) {
+      const key = [from, to].sort().join("|");
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const net = (ledger[from]?.[to] ?? 0); // already accounts for both directions
+      if (Math.abs(net) < 0.5) continue;
+
+      if (net > 0) {
+        result.push({ from, to, amount: net });
+      } else {
+        result.push({ from: to, to: from, amount: -net });
+      }
+    }
+  }
+
+  return result.sort((a, b) => b.amount - a.amount);
 }
