@@ -138,20 +138,25 @@ export interface Session {
   partnerId?: string;
 }
 
+let cachedSession: Session | null | undefined = undefined;
+
 export function getSession(): Session | null {
   if (typeof window === "undefined") return null;
+  if (cachedSession !== undefined) return cachedSession;
   try {
     const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as Session) : null;
+    cachedSession = raw ? (JSON.parse(raw) as Session) : null;
   } catch {
-    return null;
+    cachedSession = null;
   }
+  return cachedSession;
 }
 
 export function setSession(s: Session | null) {
   if (typeof window === "undefined") return;
   if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s));
   else localStorage.removeItem(SESSION_KEY);
+  cachedSession = s;
   listeners.forEach((l) => l());
 }
 
