@@ -80,9 +80,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Property Manage — Smart Portal" },
       { name: "description", content: "Manage properties, partners, rent and expenses with partnership-based payouts." },
-      { property: "og:title", content: "Property Manage" },
-      { property: "og:description", content: "Smart portal to manage properties, partners and rent." },
+      { property: "og:title", content: "Property Manage — Smart Portal" },
+      { property: "og:description", content: "Manage properties, partners, rent and expenses with partnership-based payouts." },
       { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "Property Manage — Smart Portal" },
+      { name: "twitter:description", content: "Manage properties, partners, rent and expenses with partnership-based payouts." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3807765d-8e62-444e-8c2f-15168728fcc6" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3807765d-8e62-444e-8c2f-15168728fcc6" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       {
