@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2, Plus, Trash2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/properties")({
+export const Route = createFileRoute("/admin/properties/")({
   component: PropertiesPage,
 });
 

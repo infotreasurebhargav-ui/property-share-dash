@@ -14,8 +14,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminPropertiesRouteImport } from './routes/admin.properties'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
+import { Route as AdminPropertiesIndexRouteImport } from './routes/admin.properties.index'
 import { Route as AdminPropertiesIdRouteImport } from './routes/admin.properties.$id'
 
 const PartnerRoute = PartnerRouteImport.update({
@@ -43,20 +43,20 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPropertiesRoute = AdminPropertiesRouteImport.update({
-  id: '/properties',
-  path: '/properties',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminPartnersRoute = AdminPartnersRouteImport.update({
   id: '/partners',
   path: '/partners',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPropertiesIndexRoute = AdminPropertiesIndexRouteImport.update({
+  id: '/properties/',
+  path: '/properties/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPropertiesIdRoute = AdminPropertiesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminPropertiesRoute,
+  id: '/properties/$id',
+  path: '/properties/$id',
+  getParentRoute: () => AdminRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -65,18 +65,18 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
   '/admin/partners': typeof AdminPartnersRoute
-  '/admin/properties': typeof AdminPropertiesRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/properties/$id': typeof AdminPropertiesIdRoute
+  '/admin/properties/': typeof AdminPropertiesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
   '/admin/partners': typeof AdminPartnersRoute
-  '/admin/properties': typeof AdminPropertiesRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/admin/properties/$id': typeof AdminPropertiesIdRoute
+  '/admin/properties': typeof AdminPropertiesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -85,9 +85,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
   '/admin/partners': typeof AdminPartnersRoute
-  '/admin/properties': typeof AdminPropertiesRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/properties/$id': typeof AdminPropertiesIdRoute
+  '/admin/properties/': typeof AdminPropertiesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,18 +97,18 @@ export interface FileRouteTypes {
     | '/login'
     | '/partner'
     | '/admin/partners'
-    | '/admin/properties'
     | '/admin/'
     | '/admin/properties/$id'
+    | '/admin/properties/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/partner'
     | '/admin/partners'
-    | '/admin/properties'
     | '/admin'
     | '/admin/properties/$id'
+    | '/admin/properties'
   id:
     | '__root__'
     | '/'
@@ -116,9 +116,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/partner'
     | '/admin/partners'
-    | '/admin/properties'
     | '/admin/'
     | '/admin/properties/$id'
+    | '/admin/properties/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -165,13 +165,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/properties': {
-      id: '/admin/properties'
-      path: '/properties'
-      fullPath: '/admin/properties'
-      preLoaderRoute: typeof AdminPropertiesRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/partners': {
       id: '/admin/partners'
       path: '/partners'
@@ -179,38 +172,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPartnersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/properties/': {
+      id: '/admin/properties/'
+      path: '/properties'
+      fullPath: '/admin/properties/'
+      preLoaderRoute: typeof AdminPropertiesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/properties/$id': {
       id: '/admin/properties/$id'
-      path: '/$id'
+      path: '/properties/$id'
       fullPath: '/admin/properties/$id'
       preLoaderRoute: typeof AdminPropertiesIdRouteImport
-      parentRoute: typeof AdminPropertiesRoute
+      parentRoute: typeof AdminRoute
     }
   }
 }
 
-interface AdminPropertiesRouteChildren {
-  AdminPropertiesIdRoute: typeof AdminPropertiesIdRoute
-}
-
-const AdminPropertiesRouteChildren: AdminPropertiesRouteChildren = {
-  AdminPropertiesIdRoute: AdminPropertiesIdRoute,
-}
-
-const AdminPropertiesRouteWithChildren = AdminPropertiesRoute._addFileChildren(
-  AdminPropertiesRouteChildren,
-)
-
 interface AdminRouteChildren {
   AdminPartnersRoute: typeof AdminPartnersRoute
-  AdminPropertiesRoute: typeof AdminPropertiesRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminPropertiesIdRoute: typeof AdminPropertiesIdRoute
+  AdminPropertiesIndexRoute: typeof AdminPropertiesIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminPartnersRoute: AdminPartnersRoute,
-  AdminPropertiesRoute: AdminPropertiesRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
+  AdminPropertiesIdRoute: AdminPropertiesIdRoute,
+  AdminPropertiesIndexRoute: AdminPropertiesIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -224,3 +214,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
