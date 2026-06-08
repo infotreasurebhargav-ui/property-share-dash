@@ -181,14 +181,15 @@ function PropertyDetail() {
 
   // ── Transaction management ──
   const [txnOpen, setTxnOpen] = useState(false);
+  const NONE = "_none";
   const [tForm, setTForm] = useState({
     type: "rent" as "rent" | "expense" | "deposit",
     amount: "",
     date: new Date().toISOString().slice(0, 10),
     category: "",
     note: "",
-    unitId: "",
-    collectedBy: "",
+    unitId: NONE,
+    collectedBy: NONE,
   });
 
   const addTxn = () => {
@@ -203,11 +204,11 @@ function PropertyDetail() {
       date: tForm.date,
       category: tForm.category.trim() || undefined,
       note: tForm.note.trim() || undefined,
-      unitId: tForm.unitId || undefined,
-      collectedBy: tForm.collectedBy || undefined,
+      unitId: tForm.unitId !== NONE ? tForm.unitId : undefined,
+      collectedBy: tForm.collectedBy !== NONE ? tForm.collectedBy : undefined,
     };
     db.set({ ...cur, transactions: [t, ...cur.transactions] });
-    setTForm({ type: "rent", amount: "", date: new Date().toISOString().slice(0, 10), category: "", note: "", unitId: "", collectedBy: "" });
+    setTForm({ type: "rent", amount: "", date: new Date().toISOString().slice(0, 10), category: "", note: "", unitId: NONE, collectedBy: NONE });
     setTxnOpen(false);
     toast.success("Entry added");
   };
@@ -587,7 +588,7 @@ function PropertyDetail() {
                         <Select value={tForm.unitId} onValueChange={(v) => setTForm({ ...tForm, unitId: v })}>
                           <SelectTrigger className="text-base"><SelectValue placeholder="All units / general" /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">All units / general</SelectItem>
+                            <SelectItem value={NONE}>All units / general</SelectItem>
                             {units.map((u) => (
                               <SelectItem key={u.id} value={u.id}>{u.floor} · {u.label} — {formatINR(u.monthlyRent)}/mo</SelectItem>
                             ))}
@@ -610,7 +611,7 @@ function PropertyDetail() {
                         <Select value={tForm.collectedBy} onValueChange={(v) => setTForm({ ...tForm, collectedBy: v })}>
                           <SelectTrigger className="text-base"><SelectValue placeholder="Select partner" /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Not tracked</SelectItem>
+                            <SelectItem value={NONE}>Not tracked</SelectItem>
                             {property.partners.map((pp) => {
                               const p = data.partners.find((x) => x.id === pp.partnerId);
                               return <SelectItem key={pp.partnerId} value={pp.partnerId}>{p?.name ?? pp.partnerId} ({pp.percent}%)</SelectItem>;
