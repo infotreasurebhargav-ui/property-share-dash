@@ -39,9 +39,9 @@ function LoginPage() {
   return (
     <div className="min-h-screen grid place-items-center p-4">
       <div className="w-full max-w-md">
-        <div className="glass p-8">
+        <div className="glass p-6 sm:p-8">
           <div className="flex flex-col items-center text-center mb-6">
-            <img src="/logo.png" alt="Property Manage" className="h-24 w-24 object-contain mb-2" />
+            <img src="/logo.png" alt="Property Manage" className="h-20 w-20 sm:h-24 sm:w-24 object-contain mb-2" />
             <h1 className="text-2xl font-bold text-gradient">Property Manage</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Smart portal to manage properties, partners & rent
@@ -55,9 +55,12 @@ function LoginPage() {
                 <UserIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="u"
-                  className="pl-9 bg-white/60"
+                  className="pl-9 bg-white/60 text-base"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  autoComplete="username"
                   autoFocus
                   required
                 />
@@ -70,14 +73,15 @@ function LoginPage() {
                 <Input
                   id="p"
                   type="password"
-                  className="pl-9 bg-white/60"
+                  className="pl-9 bg-white/60 text-base"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                   required
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full btn-brand h-11" disabled={loading}>
+            <Button type="submit" className="w-full btn-brand h-12 text-base" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>

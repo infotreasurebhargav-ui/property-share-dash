@@ -87,25 +87,66 @@ function PartnersPage() {
             <DialogTrigger asChild>
               <Button className="btn-brand"><Plus className="h-4 w-4 mr-1" /> Add Partner</Button>
             </DialogTrigger>
-            <DialogContent className="glass border-none">
+            <DialogContent className="glass border-none mx-4 max-w-md">
               <DialogHeader><DialogTitle>Add partner & create login</DialogTitle></DialogHeader>
               <div className="grid gap-4">
-                <div><Label>Full Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                  <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+                <div>
+                  <Label>Full Name</Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="text-base"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      inputMode="email"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      className="text-base"
+                    />
+                  </div>
+                  <div>
+                    <Label>Phone</Label>
+                    <Input
+                      type="tel"
+                      inputMode="tel"
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      className="text-base"
+                    />
+                  </div>
                 </div>
                 <div className="border-t border-white/40 pt-3">
-                  <p className="text-xs text-muted-foreground mb-2">Login credentials for partner portal:</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Username</Label><Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></div>
-                    <div><Label>Password</Label><Input value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+                  <p className="text-xs text-muted-foreground mb-3">Login credentials for partner portal:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label>Username</Label>
+                      <Input
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        value={form.username}
+                        onChange={(e) => setForm({ ...form, username: e.target.value })}
+                        className="text-base"
+                      />
+                    </div>
+                    <div>
+                      <Label>Password</Label>
+                      <Input
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        className="text-base"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button className="btn-brand" onClick={create}>Create</Button>
+              <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+                <Button variant="ghost" onClick={() => setOpen(false)} className="w-full sm:w-auto">Cancel</Button>
+                <Button className="btn-brand w-full sm:w-auto" onClick={create}>Create</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -123,9 +164,9 @@ function PartnersPage() {
             const user = data.users.find((u) => u.partnerId === p.id);
             const properties = data.properties.filter((prop) => prop.partners.some((pp) => pp.partnerId === p.id));
             return (
-              <div key={p.id} className="glass p-5">
+              <div key={p.id} className="glass p-4 sm:p-5">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-green)] flex items-center justify-center text-white font-bold">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-green)] flex items-center justify-center text-white font-bold shrink-0">
                     {p.name.slice(0, 1).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -134,18 +175,29 @@ function PartnersPage() {
                     {p.phone && <div className="text-xs text-muted-foreground">{p.phone}</div>}
                   </div>
                 </div>
-                <div className="glass-soft p-2 text-xs mb-3">
+                <div className="glass-soft p-2 text-xs mb-3 rounded-lg">
                   <div className="text-muted-foreground">Login</div>
                   <div className="font-mono font-semibold">{user?.username ?? "—"}</div>
                 </div>
                 <div className="text-xs text-muted-foreground mb-3">
-                  In <span className="font-semibold text-foreground">{properties.length}</span> propert{properties.length === 1 ? "y" : "ies"}
+                  In <span className="font-semibold text-foreground">{properties.length}</span>{" "}
+                  propert{properties.length === 1 ? "y" : "ies"}
                 </div>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" className="flex-1" onClick={() => resetPassword(p)}>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1 min-h-[40px]"
+                    onClick={() => resetPassword(p)}
+                  >
                     <KeyRound className="h-3.5 w-3.5 mr-1" /> Reset Pass
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => remove(p)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="min-h-[40px] px-3"
+                    onClick={() => remove(p)}
+                  >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>

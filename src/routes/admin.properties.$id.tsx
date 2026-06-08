@@ -32,7 +32,6 @@ function PropertyDetail() {
   const remaining = 100 - pct;
   const txns = data.transactions.filter((t) => t.propertyId === id).sort((a, b) => b.date.localeCompare(a.date));
 
-  // partner add
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [pForm, setPForm] = useState({ partnerId: "", percent: "" });
 
@@ -65,9 +64,14 @@ function PropertyDetail() {
     });
   };
 
-  // txn add
   const [txnOpen, setTxnOpen] = useState(false);
-  const [tForm, setTForm] = useState({ type: "rent" as "rent" | "expense", amount: "", date: new Date().toISOString().slice(0, 10), category: "", note: "" });
+  const [tForm, setTForm] = useState({
+    type: "rent" as "rent" | "expense",
+    amount: "",
+    date: new Date().toISOString().slice(0, 10),
+    category: "",
+    note: "",
+  });
 
   const addTxn = () => {
     const amount = Number(tForm.amount);
@@ -105,7 +109,7 @@ function PropertyDetail() {
         icon={Building2}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <Stat label="Monthly Rent" value={formatINR(property.monthlyRent)} icon={Wallet} tone="from-[var(--brand-blue)] to-[var(--brand-navy)]" />
         <Stat label="Total Income" value={formatINR(summary.income)} icon={TrendingUp} tone="from-emerald-500 to-[var(--brand-green)]" />
         <Stat label="Total Expense" value={formatINR(summary.expense)} icon={TrendingDown} tone="from-red-500 to-orange-500" />
@@ -113,34 +117,36 @@ function PropertyDetail() {
       </div>
 
       <Tabs defaultValue="partners" className="w-full">
-        <TabsList className="glass-soft p-1 mb-4">
-          <TabsTrigger value="partners">Partners</TabsTrigger>
-          <TabsTrigger value="ledger">Rent & Expenses</TabsTrigger>
-          <TabsTrigger value="distribution">Distribution</TabsTrigger>
+        <TabsList className="glass-soft p-1 mb-4 w-full flex">
+          <TabsTrigger value="partners" className="flex-1 text-xs sm:text-sm">Partners</TabsTrigger>
+          <TabsTrigger value="ledger" className="flex-1 text-xs sm:text-sm">Ledger</TabsTrigger>
+          <TabsTrigger value="distribution" className="flex-1 text-xs sm:text-sm">Distribution</TabsTrigger>
         </TabsList>
 
+        {/* ── Partners tab ── */}
         <TabsContent value="partners">
-          <div className="glass p-5">
-            <div className="flex items-center justify-between mb-4">
+          <div className="glass p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-3 mb-4">
               <div>
                 <h3 className="font-bold flex items-center gap-2"><Users className="h-4 w-4" /> Partners</h3>
                 <p className="text-xs text-muted-foreground">
-                  Allocated <span className="font-semibold">{pct}%</span> · Remaining <span className={`font-semibold ${remaining === 0 ? "text-emerald-700" : "text-amber-700"}`}>{remaining}%</span>
+                  Allocated <span className="font-semibold">{pct}%</span> · Remaining{" "}
+                  <span className={`font-semibold ${remaining === 0 ? "text-emerald-700" : "text-amber-700"}`}>{remaining}%</span>
                 </p>
               </div>
               <Dialog open={partnerOpen} onOpenChange={setPartnerOpen}>
                 <DialogTrigger asChild>
-                  <Button className="btn-brand" disabled={remaining <= 0 || availablePartners.length === 0}>
-                    <Plus className="h-4 w-4 mr-1" /> Add Partner
+                  <Button className="btn-brand shrink-0" size="sm" disabled={remaining <= 0 || availablePartners.length === 0}>
+                    <Plus className="h-4 w-4 mr-1" /> Add
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="glass border-none">
+                <DialogContent className="glass border-none mx-4">
                   <DialogHeader><DialogTitle>Add partner to property</DialogTitle></DialogHeader>
                   <div className="grid gap-4">
                     <div>
                       <Label>Partner</Label>
                       <Select value={pForm.partnerId} onValueChange={(v) => setPForm({ ...pForm, partnerId: v })}>
-                        <SelectTrigger><SelectValue placeholder="Select partner" /></SelectTrigger>
+                        <SelectTrigger className="text-base"><SelectValue placeholder="Select partner" /></SelectTrigger>
                         <SelectContent>
                           {availablePartners.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                         </SelectContent>
@@ -153,12 +159,21 @@ function PropertyDetail() {
                     </div>
                     <div>
                       <Label>Percent (max {remaining}%)</Label>
-                      <Input type="number" min="0.01" max={remaining} step="0.01" value={pForm.percent} onChange={(e) => setPForm({ ...pForm, percent: e.target.value })} />
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min="0.01"
+                        max={remaining}
+                        step="0.01"
+                        value={pForm.percent}
+                        onChange={(e) => setPForm({ ...pForm, percent: e.target.value })}
+                        className="text-base"
+                      />
                     </div>
                   </div>
-                  <DialogFooter>
-                    <Button variant="ghost" onClick={() => setPartnerOpen(false)}>Cancel</Button>
-                    <Button className="btn-brand" onClick={addPartner}>Add</Button>
+                  <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+                    <Button variant="ghost" onClick={() => setPartnerOpen(false)} className="w-full sm:w-auto">Cancel</Button>
+                    <Button className="btn-brand w-full sm:w-auto" onClick={addPartner}>Add</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -168,7 +183,13 @@ function PropertyDetail() {
             <div className="h-3 rounded-full bg-white/40 overflow-hidden flex mb-4">
               {property.partners.map((pp, i) => {
                 const partner = data.partners.find((x) => x.id === pp.partnerId);
-                const hues = ["from-[var(--brand-navy)] to-[var(--brand-blue)]", "from-[var(--brand-blue)] to-cyan-500", "from-emerald-500 to-[var(--brand-green)]", "from-amber-500 to-orange-500", "from-fuchsia-500 to-pink-500"];
+                const hues = [
+                  "from-[var(--brand-navy)] to-[var(--brand-blue)]",
+                  "from-[var(--brand-blue)] to-cyan-500",
+                  "from-emerald-500 to-[var(--brand-green)]",
+                  "from-amber-500 to-orange-500",
+                  "from-fuchsia-500 to-pink-500",
+                ];
                 return (
                   <div
                     key={pp.partnerId}
@@ -189,17 +210,15 @@ function PropertyDetail() {
                   const share = (summary.net * pp.percent) / 100;
                   return (
                     <div key={pp.partnerId} className="glass-soft p-3 flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-green)] flex items-center justify-center text-white font-semibold text-sm">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-green)] flex items-center justify-center text-white font-semibold text-sm shrink-0">
                         {(partner?.name ?? "?").slice(0, 1).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold truncate">{partner?.name ?? "Unknown"}</div>
                         <div className="text-xs text-muted-foreground">Share: {formatINR(share)}</div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold text-primary">{pp.percent}%</div>
-                      </div>
-                      <Button size="icon" variant="ghost" onClick={() => removePartner(pp.partnerId)}>
+                      <div className="font-bold text-primary shrink-0">{pp.percent}%</div>
+                      <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0" onClick={() => removePartner(pp.partnerId)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -210,22 +229,23 @@ function PropertyDetail() {
           </div>
         </TabsContent>
 
+        {/* ── Ledger tab ── */}
         <TabsContent value="ledger">
-          <div className="glass p-5">
+          <div className="glass p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold">Rent & Expenses</h3>
               <Dialog open={txnOpen} onOpenChange={setTxnOpen}>
                 <DialogTrigger asChild>
-                  <Button className="btn-brand"><Plus className="h-4 w-4 mr-1" /> Add Entry</Button>
+                  <Button className="btn-brand" size="sm"><Plus className="h-4 w-4 mr-1" /> Add Entry</Button>
                 </DialogTrigger>
-                <DialogContent className="glass border-none">
+                <DialogContent className="glass border-none mx-4">
                   <DialogHeader><DialogTitle>Add rent or expense</DialogTitle></DialogHeader>
                   <div className="grid gap-4">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <Label>Type</Label>
                         <Select value={tForm.type} onValueChange={(v: "rent" | "expense") => setTForm({ ...tForm, type: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="text-base"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="rent">Rent (Income)</SelectItem>
                             <SelectItem value="expense">Expense</SelectItem>
@@ -234,25 +254,46 @@ function PropertyDetail() {
                       </div>
                       <div>
                         <Label>Date</Label>
-                        <Input type="date" value={tForm.date} onChange={(e) => setTForm({ ...tForm, date: e.target.value })} />
+                        <Input
+                          type="date"
+                          value={tForm.date}
+                          onChange={(e) => setTForm({ ...tForm, date: e.target.value })}
+                          className="text-base"
+                        />
                       </div>
                     </div>
                     <div>
                       <Label>Amount (₹)</Label>
-                      <Input type="number" min="1" value={tForm.amount} onChange={(e) => setTForm({ ...tForm, amount: e.target.value })} />
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min="1"
+                        value={tForm.amount}
+                        onChange={(e) => setTForm({ ...tForm, amount: e.target.value })}
+                        className="text-base"
+                      />
                     </div>
                     <div>
                       <Label>Category (optional)</Label>
-                      <Input placeholder="Maintenance, Tax, Repair..." value={tForm.category} onChange={(e) => setTForm({ ...tForm, category: e.target.value })} />
+                      <Input
+                        placeholder="Maintenance, Tax, Repair..."
+                        value={tForm.category}
+                        onChange={(e) => setTForm({ ...tForm, category: e.target.value })}
+                        className="text-base"
+                      />
                     </div>
                     <div>
                       <Label>Note (optional)</Label>
-                      <Input value={tForm.note} onChange={(e) => setTForm({ ...tForm, note: e.target.value })} />
+                      <Input
+                        value={tForm.note}
+                        onChange={(e) => setTForm({ ...tForm, note: e.target.value })}
+                        className="text-base"
+                      />
                     </div>
                   </div>
-                  <DialogFooter>
-                    <Button variant="ghost" onClick={() => setTxnOpen(false)}>Cancel</Button>
-                    <Button className="btn-brand" onClick={addTxn}>Add</Button>
+                  <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+                    <Button variant="ghost" onClick={() => setTxnOpen(false)} className="w-full sm:w-auto">Cancel</Button>
+                    <Button className="btn-brand w-full sm:w-auto" onClick={addTxn}>Add</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -261,48 +302,74 @@ function PropertyDetail() {
             {txns.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">No entries yet.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-xs uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Type</th>
-                      <th className="text-left p-2">Category</th>
-                      <th className="text-left p-2">Note</th>
-                      <th className="text-right p-2">Amount</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {txns.map((t) => (
-                      <tr key={t.id} className="border-t border-white/30">
-                        <td className="p-2">{t.date}</td>
-                        <td className="p-2">
-                          <span className={`text-xs px-2 py-0.5 rounded ${t.type === "rent" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
-                            {t.type}
-                          </span>
-                        </td>
-                        <td className="p-2">{t.category ?? "—"}</td>
-                        <td className="p-2 text-muted-foreground">{t.note ?? "—"}</td>
-                        <td className={`p-2 text-right font-semibold ${t.type === "rent" ? "text-emerald-700" : "text-red-700"}`}>
+              <>
+                {/* Mobile transaction cards */}
+                <div className="sm:hidden space-y-2">
+                  {txns.map((t) => (
+                    <div key={t.id} className="glass-soft p-3 rounded-xl flex items-start gap-3">
+                      <span className={`mt-0.5 shrink-0 text-xs px-2 py-0.5 rounded font-semibold ${t.type === "rent" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
+                        {t.type}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className={`font-semibold ${t.type === "rent" ? "text-emerald-700" : "text-red-700"}`}>
                           {t.type === "rent" ? "+" : "−"}{formatINR(t.amount)}
-                        </td>
-                        <td className="p-2 text-right">
-                          <Button size="icon" variant="ghost" onClick={() => removeTxn(t.id)}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </td>
+                        </div>
+                        <div className="text-xs text-muted-foreground">{t.date}</div>
+                        {t.category && <div className="text-xs text-muted-foreground">{t.category}</div>}
+                        {t.note && <div className="text-xs text-muted-foreground italic">{t.note}</div>}
+                      </div>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={() => removeTxn(t.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs uppercase tracking-wider text-muted-foreground">
+                      <tr>
+                        <th className="text-left p-2">Date</th>
+                        <th className="text-left p-2">Type</th>
+                        <th className="text-left p-2">Category</th>
+                        <th className="text-left p-2">Note</th>
+                        <th className="text-right p-2">Amount</th>
+                        <th></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {txns.map((t) => (
+                        <tr key={t.id} className="border-t border-white/30">
+                          <td className="p-2">{t.date}</td>
+                          <td className="p-2">
+                            <span className={`text-xs px-2 py-0.5 rounded ${t.type === "rent" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
+                              {t.type}
+                            </span>
+                          </td>
+                          <td className="p-2">{t.category ?? "—"}</td>
+                          <td className="p-2 text-muted-foreground">{t.note ?? "—"}</td>
+                          <td className={`p-2 text-right font-semibold ${t.type === "rent" ? "text-emerald-700" : "text-red-700"}`}>
+                            {t.type === "rent" ? "+" : "−"}{formatINR(t.amount)}
+                          </td>
+                          <td className="p-2 text-right">
+                            <Button size="icon" variant="ghost" onClick={() => removeTxn(t.id)}>
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </TabsContent>
 
+        {/* ── Distribution tab ── */}
         <TabsContent value="distribution">
-          <div className="glass p-5">
+          <div className="glass p-4 sm:p-5">
             <h3 className="font-bold mb-1">Partner Distribution</h3>
             <p className="text-xs text-muted-foreground mb-4">Each partner's share of net cash ({formatINR(summary.net)})</p>
             {property.partners.length === 0 ? (
@@ -316,14 +383,23 @@ function PropertyDetail() {
                   const expenseShare = (summary.expense * pp.percent) / 100;
                   return (
                     <div key={pp.partnerId} className="glass-soft p-4">
-                      <div className="flex justify-between items-center mb-2">
+                      <div className="flex justify-between items-center mb-3">
                         <div className="font-semibold">{partner?.name}</div>
                         <div className="text-sm font-bold text-primary">{pp.percent}%</div>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div><div className="text-muted-foreground">Income share</div><div className="font-semibold text-emerald-700">{formatINR(incomeShare)}</div></div>
-                        <div><div className="text-muted-foreground">Expense share</div><div className="font-semibold text-red-700">{formatINR(expenseShare)}</div></div>
-                        <div><div className="text-muted-foreground">Net payout</div><div className="font-bold">{formatINR(share)}</div></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div className="flex sm:block items-center justify-between glass-soft rounded-lg px-3 py-2 sm:p-0 sm:bg-transparent sm:shadow-none">
+                          <div className="text-muted-foreground">Income share</div>
+                          <div className="font-semibold text-emerald-700">{formatINR(incomeShare)}</div>
+                        </div>
+                        <div className="flex sm:block items-center justify-between glass-soft rounded-lg px-3 py-2 sm:p-0 sm:bg-transparent sm:shadow-none">
+                          <div className="text-muted-foreground">Expense share</div>
+                          <div className="font-semibold text-red-700">{formatINR(expenseShare)}</div>
+                        </div>
+                        <div className="flex sm:block items-center justify-between glass-soft rounded-lg px-3 py-2 sm:p-0 sm:bg-transparent sm:shadow-none">
+                          <div className="text-muted-foreground">Net payout</div>
+                          <div className="font-bold">{formatINR(share)}</div>
+                        </div>
                       </div>
                     </div>
                   );
@@ -339,12 +415,12 @@ function PropertyDetail() {
 
 function Stat({ label, value, icon: Icon, tone }: { label: string; value: string; icon: any; tone: string }) {
   return (
-    <div className="glass p-4">
-      <div className={`inline-flex p-2 rounded-lg bg-gradient-to-br ${tone} text-white mb-2`}>
+    <div className="glass p-3 sm:p-4">
+      <div className={`inline-flex p-1.5 sm:p-2 rounded-lg bg-gradient-to-br ${tone} text-white mb-2`}>
         <Icon className="h-4 w-4" />
       </div>
-      <div className="text-xs text-muted-foreground uppercase">{label}</div>
-      <div className="text-lg font-bold">{value}</div>
+      <div className="text-[10px] sm:text-xs text-muted-foreground uppercase">{label}</div>
+      <div className="text-base sm:text-lg font-bold leading-tight">{value}</div>
     </div>
   );
 }
