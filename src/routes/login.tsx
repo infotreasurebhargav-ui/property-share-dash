@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import logoAsset from "@/assets/logo.asset.json";
 import { Lock, User as UserIcon } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
@@ -42,7 +41,7 @@ function LoginPage() {
       <div className="w-full max-w-md">
         <div className="glass p-8">
           <div className="flex flex-col items-center text-center mb-6">
-            <img src={logoAsset.url} alt="Property Manage" className="h-24 w-24 object-contain mb-2" />
+            <img src="/logo.png" alt="Property Manage" className="h-24 w-24 object-contain mb-2" />
             <h1 className="text-2xl font-bold text-gradient">Property Manage</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Smart portal to manage properties, partners & rent

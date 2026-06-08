@@ -1,6 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LogOut, LayoutDashboard, Building2, Users, UserCircle2 } from "lucide-react";
-import logoAsset from "@/assets/logo.asset.json";
 import { logout, useSession, useDB } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
@@ -32,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex">
       <aside className="hidden lg:flex flex-col w-64 p-4 gap-4 sticky top-0 h-screen">
         <div className="glass p-4 flex items-center gap-3">
-          <img src={logoAsset.url} alt="Property Manage" className="h-12 w-12 object-contain" />
+          <img src="/logo.png" alt="Property Manage" className="h-12 w-12 object-contain" />
           <div className="leading-tight">
             <div className="font-bold text-sm text-gradient">PROPERTY</div>
             <div className="text-xs font-semibold text-accent">MANAGE</div>
@@ -86,7 +85,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="flex-1 min-w-0">
         <div className="lg:hidden sticky top-0 z-20 glass-soft m-3 p-3 flex items-center gap-3">
-          <img src={logoAsset.url} alt="" className="h-8 w-8" />
+          <img src="/logo.png" alt="" className="h-8 w-8" />
           <div className="font-bold text-sm text-gradient flex-1">PROPERTY MANAGE</div>
           <Button size="icon" variant="ghost" onClick={() => { logout(); navigate({ to: "/login" }); }}>
             <LogOut className="h-4 w-4" />
