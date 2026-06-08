@@ -85,16 +85,31 @@ function read(): DB {
   }
 }
 
-function write(db: DB) {
-  localStorage.setItem(KEY, JSON.stringify(db));
-  listeners.forEach((l) => l());
+function write(data: DB) {
+  localStorage.setItem(KEY, JSON.stringify(data));
+  notify();
 }
 
 const listeners = new Set<() => void>();
+let cachedSnapshot: DB | null = null;
+
+function notify() {
+  cachedSnapshot = null;
+  listeners.forEach((l) => l());
+}
+
+function getSnapshot(): DB {
+  if (!cachedSnapshot) cachedSnapshot = read();
+  return cachedSnapshot;
+}
+
 function subscribe(cb: () => void) {
   listeners.add(cb);
   const onStorage = (e: StorageEvent) => {
-    if (e.key === KEY || e.key === SESSION_KEY) cb();
+    if (e.key === KEY || e.key === SESSION_KEY) {
+      cachedSnapshot = null;
+      cb();
+    }
   };
   window.addEventListener("storage", onStorage);
   return () => {
@@ -105,20 +120,15 @@ function subscribe(cb: () => void) {
 
 export const db = {
   get: read,
-  set: write,
+  set: (data: DB) => {
+    write(data);
+  },
   uid: (prefix = "id") =>
     `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
 };
 
 export function useDB(): DB {
-  return useSyncExternalStore(
-    subscribe,
-    () => {
-      // re-read each time to capture writes
-      return read();
-    },
-    () => emptyDB,
-  );
+  return useSyncExternalStore(subscribe, getSnapshot, () => emptyDB);
 }
 
 // ----- session -----
