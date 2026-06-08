@@ -106,10 +106,9 @@ function getSnapshot(): DB {
 function subscribe(cb: () => void) {
   listeners.add(cb);
   const onStorage = (e: StorageEvent) => {
-    if (e.key === KEY || e.key === SESSION_KEY) {
-      cachedSnapshot = null;
-      cb();
-    }
+    if (e.key === KEY) cachedSnapshot = null;
+    if (e.key === SESSION_KEY) cachedSession = undefined;
+    if (e.key === KEY || e.key === SESSION_KEY) cb();
   };
   window.addEventListener("storage", onStorage);
   return () => {
