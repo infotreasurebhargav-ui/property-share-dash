@@ -21,6 +21,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+// Format "2026-06" → "June 2026"
+function fmtMonth(ym: string) {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+}
+
 export const Route = createFileRoute("/admin/properties/$id")({
   component: PropertyDetail,
   notFoundComponent: () => (
@@ -182,10 +188,27 @@ function PropertyDetail() {
   // ── Transaction management ──
   const [txnOpen, setTxnOpen] = useState(false);
   const NONE = "_none";
+
+  // Generate month options: 12 past + current + 3 future
+  const monthOptions = (() => {
+    const today = new Date();
+    const options: { value: string; label: string }[] = [];
+    for (let i = -12; i <= 3; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+      options.push({ value, label });
+    }
+    return options;
+  })();
+
+  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+
   const [tForm, setTForm] = useState({
     type: "rent" as "rent" | "expense" | "deposit",
     amount: "",
     date: new Date().toISOString().slice(0, 10),
+    rentMonth: currentMonth,
     category: "",
     note: "",
     unitId: NONE,
@@ -196,19 +219,21 @@ function PropertyDetail() {
     const amount = Number(tForm.amount);
     if (!amount || amount <= 0) return toast.error("Amount must be > 0");
     const cur = db.get();
+    const isRentType = tForm.type === "rent" || tForm.type === "deposit";
     const t: Transaction = {
       id: db.uid("txn"),
       propertyId: id,
       type: tForm.type,
       amount,
       date: tForm.date,
+      rentMonth: isRentType ? tForm.rentMonth : undefined,
       category: tForm.category.trim() || undefined,
       note: tForm.note.trim() || undefined,
       unitId: tForm.unitId !== NONE ? tForm.unitId : undefined,
       collectedBy: tForm.collectedBy !== NONE ? tForm.collectedBy : undefined,
     };
     db.set({ ...cur, transactions: [t, ...cur.transactions] });
-    setTForm({ type: "rent", amount: "", date: new Date().toISOString().slice(0, 10), category: "", note: "", unitId: NONE, collectedBy: NONE });
+    setTForm({ type: "rent", amount: "", date: new Date().toISOString().slice(0, 10), rentMonth: currentMonth, category: "", note: "", unitId: NONE, collectedBy: NONE });
     setTxnOpen(false);
     toast.success("Entry added");
   };
@@ -393,6 +418,13 @@ function PropertyDetail() {
                               </p>
                             )}
                           </div>
+
+                          {/* ── Rent status tracker ── */}
+                          <RentStatusTracker
+                            unit={u}
+                            unitTxns={unitTxns}
+                            currentMonth={currentMonth}
+                          />
                         </div>
                       );
                     })}
@@ -582,6 +614,25 @@ function PropertyDetail() {
                       </div>
                     </div>
 
+                    {(tForm.type === "rent" || tForm.type === "deposit") && (
+                      <div>
+                        <Label>Rent / Deposit for Month</Label>
+                        <Select value={tForm.rentMonth} onValueChange={(v) => setTForm({ ...tForm, rentMonth: v })}>
+                          <SelectTrigger className="text-base"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {monthOptions.map((m) => (
+                              <SelectItem key={m.value} value={m.value}>
+                                {m.label}{m.value === currentMonth ? " (Current)" : m.value > currentMonth ? " 🔵 Advance" : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {tForm.rentMonth > currentMonth && (
+                          <p className="text-xs text-blue-600 mt-1">🔵 Advance payment — rent received before due month.</p>
+                        )}
+                      </div>
+                    )}
+
                     {units.length > 0 && (
                       <div>
                         <Label>Unit <span className="text-muted-foreground text-xs">(optional)</span></Label>
@@ -663,6 +714,11 @@ function PropertyDetail() {
                           <div className={`font-semibold ${TXN_VALUE_COLOR[t.type]}`}>
                             {TXN_SIGN[t.type]}{formatINR(t.amount)}
                           </div>
+                          {t.rentMonth && (
+                            <div className={`text-xs font-semibold ${t.rentMonth > currentMonth ? "text-blue-600" : "text-muted-foreground"}`}>
+                              {t.rentMonth > currentMonth ? "🔵 Advance · " : "📅 "}{fmtMonth(t.rentMonth)}
+                            </div>
+                          )}
                           <div className="text-xs text-muted-foreground">{t.date}</div>
                           {unit && <div className="text-xs text-muted-foreground">{unit.floor} · {unit.label}</div>}
                           {collector && (
@@ -688,9 +744,10 @@ function PropertyDetail() {
                       <tr>
                         <th className="text-left p-2">Date</th>
                         <th className="text-left p-2">Type</th>
+                        <th className="text-left p-2">For Month</th>
                         {units.length > 0 && <th className="text-left p-2">Unit</th>}
                         <th className="text-left p-2">Collected / Paid by</th>
-                        <th className="text-left p-2">Category / Note</th>
+                        <th className="text-left p-2">Note</th>
                         <th className="text-right p-2">Amount</th>
                         <th></th>
                       </tr>
@@ -704,6 +761,13 @@ function PropertyDetail() {
                             <td className="p-2 text-xs">{t.date}</td>
                             <td className="p-2">
                               <span className={`text-xs px-2 py-0.5 rounded font-semibold ${TXN_COLORS[t.type]}`}>{t.type}</span>
+                            </td>
+                            <td className="p-2 text-xs">
+                              {t.rentMonth ? (
+                                <span className={t.rentMonth > currentMonth ? "text-blue-600 font-semibold" : ""}>
+                                  {t.rentMonth > currentMonth ? "🔵 " : ""}{fmtMonth(t.rentMonth)}
+                                </span>
+                              ) : "—"}
                             </td>
                             {units.length > 0 && <td className="p-2 text-xs">{unit ? `${unit.floor} · ${unit.label}` : "—"}</td>}
                             <td className="p-2 text-xs">{collector ? <span className="font-medium text-[var(--brand-blue)]">{collector.name}</span> : "—"}</td>
@@ -966,6 +1030,82 @@ function PropertyDetail() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// ── Rent status tracker per unit ──────────────────────────────────
+function RentStatusTracker({
+  unit,
+  unitTxns,
+  currentMonth,
+}: {
+  unit: Unit;
+  unitTxns: Transaction[];
+  currentMonth: string;
+}) {
+  // Build a set of months that have rent paid for this unit
+  const paidMonths = new Set(
+    unitTxns.filter((t) => t.type === "rent" && t.rentMonth).map((t) => t.rentMonth as string),
+  );
+
+  // Generate months to display: 5 past + current + 2 future = 8 months
+  const today = new Date();
+  const months: { value: string; label: string }[] = [];
+  for (let i = -5; i <= 2; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+    months.push({ value, label });
+  }
+
+  const pendingCount = months.filter(
+    (m) => m.value <= currentMonth && !paidMonths.has(m.value),
+  ).length;
+
+  const advanceCount = months.filter(
+    (m) => m.value > currentMonth && paidMonths.has(m.value),
+  ).length;
+
+  return (
+    <div className="glass-soft rounded-xl p-3 mt-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Rent Status</span>
+        <div className="flex gap-1.5 text-[10px]">
+          {pendingCount > 0 && <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold">{pendingCount} pending</span>}
+          {advanceCount > 0 && <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold">{advanceCount} advance</span>}
+          {pendingCount === 0 && advanceCount === 0 && <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-semibold">All paid</span>}
+        </div>
+      </div>
+      <div className="flex gap-1 flex-wrap">
+        {months.map((m) => {
+          const isPaid = paidMonths.has(m.value);
+          const isPast = m.value < currentMonth;
+          const isCurrent = m.value === currentMonth;
+          const isFuture = m.value > currentMonth;
+
+          let bg = "";
+          let label = "";
+          if (isPaid && isFuture) { bg = "bg-blue-500 text-white"; label = "🔵"; }
+          else if (isPaid) { bg = "bg-emerald-500 text-white"; label = "✓"; }
+          else if (isCurrent) { bg = "bg-amber-400 text-white border-2 border-amber-600"; label = "!"; }
+          else if (isPast) { bg = "bg-red-100 text-red-700 border border-red-300"; label = "✗"; }
+          else { bg = "bg-white/40 text-muted-foreground"; label = "–"; }
+
+          return (
+            <div key={m.value} className={`flex flex-col items-center rounded-lg px-2 py-1.5 min-w-[44px] ${bg}`}>
+              <span className="text-[10px] font-semibold leading-none">{label}</span>
+              <span className="text-[9px] mt-0.5 opacity-80 leading-none whitespace-nowrap">{m.label}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex gap-3 mt-2 text-[10px] text-muted-foreground">
+        <span><span className="inline-block w-3 h-3 rounded bg-emerald-500 align-middle mr-1" />Paid</span>
+        <span><span className="inline-block w-3 h-3 rounded bg-amber-400 align-middle mr-1" />Current pending</span>
+        <span><span className="inline-block w-3 h-3 rounded bg-red-100 border border-red-300 align-middle mr-1" />Overdue</span>
+        <span><span className="inline-block w-3 h-3 rounded bg-blue-500 align-middle mr-1" />Advance</span>
+      </div>
     </div>
   );
 }

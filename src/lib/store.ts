@@ -62,6 +62,7 @@ export interface Transaction {
   type: TxnType;
   amount: number;
   date: string;           // ISO yyyy-mm-dd
+  rentMonth?: string;     // "YYYY-MM" — which month this rent/deposit covers
   category?: string;
   note?: string;
   collectedBy?: string;   // partnerId who physically collected / paid this
