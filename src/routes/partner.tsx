@@ -159,7 +159,7 @@ function PartnerHome() {
                     <div className="text-sm font-bold text-red-700">{formatINR(expense)}</div>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
