@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { getSession, useDB, useSession, propertySummary, formatINR, effectiveRent, computeSettlements } from "@/lib/store";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Building2, LayoutDashboard, TrendingUp, TrendingDown, Wallet, Percent, ArrowRightLeft, Layers } from "lucide-react";
