@@ -22,7 +22,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   ] as const;
 
   const partnerLinks = [
-    { to: "/partner", label: "My Portfolio", icon: LayoutDashboard },
+    { to: "/partner", label: "My Portfolio", icon: UserCircle2 },
+    { to: "/admin/properties", label: "Properties", icon: Building2 },
+    { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/admin/partners", label: "Partners", icon: Users },
   ] as const;
 
   const links = session.role === "admin" ? adminLinks : partnerLinks;

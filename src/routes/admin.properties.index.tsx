@@ -49,6 +49,7 @@ function PropertiesPage() {
       tenantName: form.tenantName.trim() || undefined,
       tenantContact: form.tenantContact.trim() || undefined,
       partners: [],
+      units: [],
       createdAt: new Date().toISOString(),
     };
     db.set({ ...cur, properties: [p, ...cur.properties] });
