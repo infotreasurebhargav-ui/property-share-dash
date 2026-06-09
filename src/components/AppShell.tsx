@@ -2,13 +2,21 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LogOut, LayoutDashboard, Building2, Users, UserCircle2 } from "lucide-react";
 import { logout, useSession, useDB } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const session = useSession();
   const db = useDB();
   const navigate = useNavigate();
   const location = useRouterState({ select: (s) => s.location.pathname });
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   if (!session) return <>{children}</>;
 
@@ -85,11 +93,29 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* ── Main content ── */}
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Mobile top header */}
-        <div className="lg:hidden sticky top-0 z-20 glass-soft mx-3 mt-3 mb-0 px-4 py-3 flex items-center gap-3">
-          <img src="/logo.png" alt="" className="h-8 w-8 object-contain" />
-          <div className="font-bold text-sm text-gradient flex-1">PROPERTY MANAGE</div>
-          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-green)] flex items-center justify-center text-white text-xs font-bold">
-            {displayName.slice(0, 1).toUpperCase()}
+        <div
+          className={`lg:hidden sticky top-0 z-20 transition-all duration-300 ${
+            scrolled ? "pt-4 px-4" : "pt-3 px-3"
+          }`}
+        >
+          <div
+            className={`glass-soft flex items-center gap-3 transition-all duration-300 ${
+              scrolled ? "px-4 py-2 shadow-lg" : "px-4 py-3"
+            }`}
+          >
+            <img
+              src="/logo.png"
+              alt=""
+              className={`object-contain transition-all duration-300 ${
+                scrolled ? "h-10 w-10" : "h-12 w-12"
+              }`}
+            />
+            <div className="font-bold text-base text-gradient flex-1 tracking-wide">
+              PROPERTY MANAGE
+            </div>
+            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-green)] flex items-center justify-center text-white text-sm font-bold shrink-0">
+              {displayName.slice(0, 1).toUpperCase()}
+            </div>
           </div>
         </div>
 
