@@ -7,7 +7,7 @@ export const Route = createFileRoute("/admin")({
     if (typeof window === "undefined") return;
     const s = getSession();
     if (!s) throw redirect({ to: "/login" });
-    if (s.role !== "admin") throw redirect({ to: "/partner" });
+    // Partners get the same rights as admin per client request.
   },
   component: () => (
     <AppShell>
